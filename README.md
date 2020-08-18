@@ -10,5 +10,5 @@
 
 ## Guide
 Before you start this program, make sure to change your local path and filename in readfile.py.<br>
-python3 readfile.py
+python3 readfile.py<br>
 default wiil show a picture for test.

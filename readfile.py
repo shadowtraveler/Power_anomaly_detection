@@ -5,7 +5,6 @@ Created on Sat Aug 15 19:19:32 2020
 @author: steve
 """
 
-import pickle
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -67,18 +66,59 @@ def draw(my_path='D:/document/NCTU_sec1/Powermeter/',filename='Current1/2018-09-
         plt.show()
     except:
         raise ValueError("There is an error in draw function\nPlease check your filename or path.")
-
+def custom_max(data,start_day,end_day,type_key):
+    type_key_d=type_key-1
+    ans=0
+    num=0
+    tmp=0
+    sum_ans=0
+    s_day=0
+    e_day=0
+    index=[0,0]
+    stdev_arr=[]
+    for i in range(len(data[type_key_d])):
+        if(start_day[0]==int(data[type_key_d][i][0][:4]) and start_day[1]==int(data[type_key_d][i][0][5:7]) and start_day[2]==int(data[type_key_d][i][0][8:10])):
+            s_day=i
+        if(end_day[0]==int(data[type_key_d][i][0][:4]) and end_day[1]==int(data[type_key_d][i][0][5:7]) and end_day[2]==int(data[type_key_d][i][0][8:10])):
+            e_day=i+1
+            break
+    for i in range(s_day,e_day):
+        if(len(data[type_key][i])!=1):
+            num+=len(data[type_key][i])-1
+            stdev_arr.extend(data[type_key][i][1:])
+            sum_ans+=sum(data[type_key][i])
+            tmp=max(data[type_key][i])
+            if(ans<tmp):
+                for x in range(len(data[type_key][i])):
+                    if(tmp==data[type_key][i][x]):
+                        tmp_index=x
+                        break
+                ans=tmp
+                index=[i,tmp_index]
+    print("Var:    \t"+str(np.var(stdev_arr)))
+    print("Stdev:  \t"+str(np.std(stdev_arr)))
+    print("Average:\t"+str(sum_ans/num))
+    print("Count:  \t"+str(num))
+    print("Max day: "+str(data[type_key_d][index[0]][index[1]]))
+    print("The max from "+str(start_day[0])+"y "+str(start_day[1])+"m "+str(start_day[2])+"d to "+str(end_day[0])+"y "+str(end_day[1])+"m "+str(end_day[2])+"d "+" is "+str(ans))
 def my_max(data,year=2018,mouth=1,key=0,type_key=3):
     if(key==0):
         ans=0
         num=0
         sum_ans=0
+        flag=0
+        s_day=0
+        e_day=0
         type_key_d=type_key-1
         for i in range(len(data[type_key_d])) :
             if(year>int(data[type_key_d][i][0][:4])):
                 continue
             elif(year<int(data[type_key_d][i][0][:4])):
+                e_day=i
                 break
+            if(flag==0):
+                s_day=i
+                flag=1
             num+=len(data[type_key][i])-1
             if(data[type_key][i]!=[]):
                 sum_ans+=sum(data[type_key][i])
@@ -86,6 +126,12 @@ def my_max(data,year=2018,mouth=1,key=0,type_key=3):
                 ans=max(tmp,ans)
             else:
                 continue
+        stdev_arr=[]
+        for x in  range(s_day,e_day):
+            if(len(data[type_key][x])!=1):
+                stdev_arr.extend(data[type_key][x][1:])
+        print("Var:    \t"+str(np.var(stdev_arr)))
+        print("Stdev:  \t"+str(np.std(stdev_arr)))
         print("Average:\t"+str(sum_ans/num))
         print("Count:  \t"+str(num))
         print("The max in "+str(year)+" is "+str(ans))
@@ -93,6 +139,8 @@ def my_max(data,year=2018,mouth=1,key=0,type_key=3):
         ans=0
         num=0
         sum_ans=0
+        s_day=0
+        e_day=0
         type_key_d=type_key-1
         index=[0,0]
         flag=0
@@ -101,24 +149,33 @@ def my_max(data,year=2018,mouth=1,key=0,type_key=3):
                 continue
             for j in range(i,len(data[type_key_d])):
                 if(mouth!=int(data[type_key_d][j][0][5:7]) and flag==1):
+                    e_day=j
                     break
                 if(mouth>int(data[type_key_d][j][0][5:7])):
                     continue
-                flag=1
+                if(flag==0):
+                    s_day=j
+                    flag=1
                 if(data[type_key][j]!=[]):
                     num+=len(data[type_key][j])-1
                     sum_ans+=sum(data[type_key][j])
                     tmp=max(data[type_key][j])
-                    for x in range(len(data[type_key][j])):
-                        if(tmp==data[type_key][j][x]):
-                            tmp_index=x
-                            break
                     if(ans<tmp):
+                        for x in range(len(data[type_key][j])):
+                            if(tmp==data[type_key][j][x]):
+                                tmp_index=x
+                                break
                         ans=tmp
                         index=[j,tmp_index]#找到最大的index在哪
                 else:
                     continue
             break
+        stdev_arr=[]
+        for x in  range(s_day,e_day):
+            if(len(data[type_key][x])!=1):
+                stdev_arr.extend(data[type_key][x][1:])
+        print("Var     \t"+str(np.var(stdev_arr)))
+        print("Stdev:  \t"+str(np.std(stdev_arr)))
         print("Average:\t"+str(sum_ans/num))
         print("Count:  \t"+str(num))
         print("Max day: "+str(data[type_key_d][index[0]][index[1]]))
@@ -182,12 +239,13 @@ if __name__ == '__main__':
             else:
                 my_max(data,year,mouth,1,type_key)
         elif(key==2):
+            type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
             my_start_day=input_day(start_day,finish_day,0)
             if(my_start_day[0]==0):
                 continue
             my_finish_day=input_day(start_day,finish_day,1)
             if(my_finish_day[0]==0):
                 continue
-            print(my_start_day,my_finish_day)
+            custom_max(data,my_start_day,my_finish_day,type_key)
         input("Press Enter...")
         

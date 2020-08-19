@@ -3,6 +3,33 @@
 Created on Sat Aug 15 19:19:32 2020
 
 @author: steve
+
+#####################################################################################
+#   Data Structure:                                                                 #
+#   data:                                                                           #
+#   L-1:                                                                            #
+#       [0]:Consumption-O timestamp                                                 #
+#       [1]:Consumption-O data                                                      #
+#       [2]:Current1-timestamp                                                      #
+#       [3]:Current1 data                                                           #
+#       [4]:Current2-timestamp                                                      #
+#       [5]:Current2 data                                                           #
+#       [6]:Power1-timestamp                                                        #
+#       [7]:Power1 data                                                             #
+#       [8]:Power2-timestamp                                                        #
+#       [9]:Power2 data                                                             #
+#       [10]:Volt1-timestamp                                                        #
+#       [11]:Volt1 data                                                             #
+#       [12]:Volt2-timestamp                                                        #
+#       [13]:Volt2 data                                                             #
+#   L-2:                                                                            #
+#       [][0:]:data for 20xx-xx-xx(one day)                                         #
+#   L-3:                                                                            #
+#       [(if odd) ][][0]:filename                                                   #
+#       [(if even)][][0]:0                                                          #
+#       [(if odd) ][][1:]:timestamp                                                 #
+#       [(if even)][][1:]:Value                                                     #
+#####################################################################################
 """
 
 import pandas as pd
@@ -13,13 +40,13 @@ import numpy as np
 def start_day(data):
     long=len(data[0])-1
     s_year=int(data[0][0][0][:4])
-    s_mouth=int(data[0][0][0][5:7])
+    s_month=int(data[0][0][0][5:7])
     s_day=int(data[0][0][0][8:10])
-    start=[s_year,s_mouth,s_day]
+    start=[s_year,s_month,s_day]
     f_year=int(data[0][long][0][:4])
-    f_mouth=int(data[0][long][0][5:7])
+    f_month=int(data[0][long][0][5:7])
     f_day=int(data[0][long][0][8:10])
-    finish=[f_year,f_mouth,f_day]
+    finish=[f_year,f_month,f_day]
     return start,finish
 
 def read_and_save(my_path='D:/document/NCTU_sec1/Powermeter/'):
@@ -63,6 +90,7 @@ def draw(my_path='D:/document/NCTU_sec1/Powermeter/',filename='Current1/2018-09-
         Path_o=my_path
         df=pd.read_csv(os.path.join(Path_o,filename))
         df.plot(title=filename)
+        print("File loaded.\nClose picture to start.")
         plt.show()
     except:
         raise ValueError("There is an error in draw function\nPlease check your filename or path.")
@@ -101,7 +129,7 @@ def custom_max(data,start_day,end_day,type_key):
     print("Count:  \t"+str(num))
     print("Max day: "+str(data[type_key_d][index[0]][index[1]]))
     print("The max from "+str(start_day[0])+"y "+str(start_day[1])+"m "+str(start_day[2])+"d to "+str(end_day[0])+"y "+str(end_day[1])+"m "+str(end_day[2])+"d "+" is "+str(ans))
-def my_max(data,year=2018,mouth=1,key=0,type_key=3):
+def my_max(data,year=2018,month=1,key=0,type_key=3):
     if(key==0):
         ans=0
         num=0
@@ -148,10 +176,10 @@ def my_max(data,year=2018,mouth=1,key=0,type_key=3):
             if(year>int(data[type_key_d][i][0][:4])):
                 continue
             for j in range(i,len(data[type_key_d])):
-                if(mouth!=int(data[type_key_d][j][0][5:7]) and flag==1):
+                if(month!=int(data[type_key_d][j][0][5:7]) and flag==1):
                     e_day=j
                     break
-                if(mouth>int(data[type_key_d][j][0][5:7])):
+                if(month>int(data[type_key_d][j][0][5:7])):
                     continue
                 if(flag==0):
                     s_day=j
@@ -179,14 +207,29 @@ def my_max(data,year=2018,mouth=1,key=0,type_key=3):
         print("Average:\t"+str(sum_ans/num))
         print("Count:  \t"+str(num))
         print("Max day: "+str(data[type_key_d][index[0]][index[1]]))
-        print("The max in "+str(year)+"y "+str(mouth)+"m is "+str(ans))
+        print("The max in "+str(year)+"y "+str(month)+"m is "+str(ans))
     #print("max")
 
 def input_day(start_day,finish_day,key):
-    def error_msg():
-        print("Error!!The data is out of range!\nRange is from")
-        print(str(start_day[0])+"y "+str(start_day[1])+"m "+str(start_day[2])+"d")
-        print("to\n"+str(finish_day[0])+"y "+str(finish_day[1])+"m "+str(finish_day[2])+"d")
+    def check_day(year,month,day):
+        m_d={1:31,2:28,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31}
+        if(month>12):
+            return False
+        elif(month==2):
+            if(year%4==0 and day==29):
+                return True
+        else:
+            if(day>m_d[month] or day<1):
+                return False
+        return True
+    
+    def error_msg(error_key=0):
+        if(error_key):
+            print("Something is wrong for input month and day.")
+        else:
+            print("Error!!The data is out of range!\nRange is from")
+            print(str(start_day[0])+"y "+str(start_day[1])+"m "+str(start_day[2])+"d")
+            print("to\n"+str(finish_day[0])+"y "+str(finish_day[1])+"m "+str(finish_day[2])+"d")
     while(1):
         if(key==0):
             print("input your start day:")
@@ -195,22 +238,17 @@ def input_day(start_day,finish_day,key):
         year=int(input("year:"))
         if(year==0):
             return [0,0,0]
-        mouth=int(input("mouth:"))
+        month=int(input("month:"))
         day=int(input("day:"))
-        if(year<start_day[0] or (year==start_day[0] and mouth<start_day[1]) or (year==start_day[0] and mouth==start_day[1] and day<start_day[2])):
+        if(year<start_day[0] or (year==start_day[0] and month<start_day[1]) or (year==start_day[0] and month==start_day[1] and day<start_day[2])):
             error_msg()
-        elif(year>finish_day[0] or (year==finish_day[0] and mouth>finish_day[1]) or (year==finish_day[0] and mouth==finish_day[1] and day>finish_day[2])):
+        elif(year>finish_day[0] or (year==finish_day[0] and month>finish_day[1]) or (year==finish_day[0] and month==finish_day[1] and day>finish_day[2])):
             error_msg()
         else:
-            return [year,mouth,day]
-"""
-Path_o='D:/document/NCTU_sec1/Powermeter/Current1/'
-df=pd.read_csv(os.path.join(Path_o,'2018-09-27.csv'))
-tmp=[]
-tmp.extend(df['value'])
-print(type(tmp))
-df.plot()
-"""
+            if(check_day(year,month,day)):
+                return [year,month,day]
+            else:
+                error_msg(error_key=1)
 
 if __name__ == '__main__':
     my_path='D:/document/NCTU_sec1/Powermeter/' #input the path you put the data where named Powermeter in default.
@@ -222,7 +260,7 @@ if __name__ == '__main__':
     draw(my_path,filename)
     key=1
     while(key):
-        key=input("input 0 to exit\ninput 1 to show data status\ninput 2 to set range:\nEnter:")
+        key=input("input 0 to exit\ninput 1 to show data status\ninput 2 to set range\nEnter:")
         if(key==""):
             key=1
             continue
@@ -233,11 +271,11 @@ if __name__ == '__main__':
         elif(key==1):
             type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
             year=int(input("year:"))
-            mouth=int(input("(if you want to see year data,input 0)\nmouth:"))
-            if(mouth==0):
-                my_max(data,year,mouth,0,type_key)
+            month=int(input("(if you want to see year data,input 0)\nmonth:"))
+            if(month==0):
+                my_max(data,year,month,0,type_key)
             else:
-                my_max(data,year,mouth,1,type_key)
+                my_max(data,year,month,1,type_key)
         elif(key==2):
             type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
             my_start_day=input_day(start_day,finish_day,0)

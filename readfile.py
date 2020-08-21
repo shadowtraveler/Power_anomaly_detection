@@ -36,6 +36,8 @@ Created on Sat Aug 15 19:19:32 2020
 #       custom_max:     show data between range                                     #
 #       my_max:         show data between range by years or months                  #
 #       input_day:      input day range                                             #
+#       my_darw:        draw six pictures for input range                           #
+#       all_save:       save all data for days                                      #
 #####################################################################################
 """
 
@@ -277,7 +279,9 @@ def my_draw(data,start_day,end_day,key,type_key):
     sum_ans=0
     num=0
     month_data=[]   
+    month_data_time=[]
     week_data=[]    
+    week_data_time=[]
     day_data=[]     
     hour_data=[]    
     min_data=[]     
@@ -300,8 +304,10 @@ def my_draw(data,start_day,end_day,key,type_key):
                 num+=len(data[type_key][j])-1
             if(num==0):
                 month_data.extend([0])
+                month_data_time.extend([data[type_key_d][month_flag[1]][0][:7]])
             else:
                 month_data.extend([sum_ans/num])
+                month_data_time.extend([data[type_key_d][month_flag[1]][0][:7]])
             month_flag[0]=int(data[type_key_d][i][0][5:7])
             month_flag[1]=i
         
@@ -318,10 +324,11 @@ def my_draw(data,start_day,end_day,key,type_key):
                 sum_ans+=sum(data[type_key][j])
                 num+=len(data[type_key][j])-1
             if(num==0):
-                print("!!!!!!!!!!!!!!!!!")
                 week_data.extend([0])
+                week_data_time.extend([data[type_key_d][week_flag[1]][0][:10]])
             else:
                 week_data.extend([sum_ans/num])
+                week_data_time.extend([data[type_key_d][week_flag[1]][0][:10]])
             week_flag[0]=1
             week_flag[1]=i
         if(len(data[type_key][i])!=1):
@@ -386,8 +393,10 @@ def my_draw(data,start_day,end_day,key,type_key):
         num+=len(data[type_key][j])-1
     if(num==0):
         month_data.extend([0])
+        month_data_time.extend([data[type_key_d][month_flag[1]][0][:7]])
     else:
         month_data.extend([sum_ans/num])
+        month_data_time.extend([data[type_key_d][month_flag[1]][0][:7]])
     
     #week cal
     for j in range(week_flag[1],end_day):
@@ -395,9 +404,13 @@ def my_draw(data,start_day,end_day,key,type_key):
         num+=len(data[type_key][j])-1
     if(num==0):
         week_data.extend([0])
+        week_data_time.extend([data[type_key_d][week_flag[1]][0][:10]])
     else:
         week_data.extend([sum_ans/num])
-    fig = plt.figure(figsize=(27,9))
+        week_data_time.extend([data[type_key_d][week_flag[1]][0][:10]])
+        
+    #繪圖
+    fig = plt.figure(figsize=(36,12))
     ax1=fig.add_subplot(231)
     ax2=fig.add_subplot(232)
     ax3=fig.add_subplot(233)
@@ -408,18 +421,63 @@ def my_draw(data,start_day,end_day,key,type_key):
     fig.suptitle('test', color='red', fontsize=20)
     ax1.plot(np.array(sec_data))
     ax1.set_title("sec")
-    ax2.plot(np.array(day_data))
-    ax2.set_title("day")
-    ax3.plot(np.array(week_data))
-    ax3.set_title("week")    
-    ax4.plot(np.array(month_data))
-    ax4.set_title("month")
-    ax5.plot(np.array(hour_data))
-    ax5.set_title("hour")
-    ax6.plot(np.array(min_data))
-    ax6.set_title("min")
+    ax2.plot(np.array(min_data))
+    ax2.set_title("min")
+    ax3.plot(np.array(hour_data))
+    ax3.set_title("hour")    
+    ax4.plot(np.array(day_data))
+    ax4.set_title("day")
+    if(len(week_data_time)<10):
+        ax5.plot(np.array(week_data_time),np.array(week_data))
+    else:
+        ax5.plot(np.array(week_data))
+    ax5.set_title("week")
+    ax6.plot(np.array(month_data_time),np.array(month_data))
+    ax6.set_title("month")
     print("Close Picture to the next step")
     plt.show()
+
+def all_save(data,my_path,type_key,key=0):
+    if(os.path.isdir(my_path+"/output")):
+        print("Now Loading...")
+    else:
+        os.mkdir(my_path+"/output")
+        print("Now Loading...")
+    Path_dictionary=['Consumption-O','Current1','Current2','Power1','Power2','Volt1','Volt2',]
+    tmp_Time=[]
+    tmp_Var=[]
+    tmp_Std=[]
+    tmp_Aver=[]
+    tmp_Count=[]
+    tmp_Max=[]
+    tmp_Max_day=[]
+    i=type_key
+    for j in range(len(data[i])):
+        if(len(data[i][j])==1):
+            tmp_Time.extend([str(data[i-1][j][0][:10])])
+            tmp_Var.extend([0])
+            tmp_Std.extend([0])
+            tmp_Aver.extend([0])
+            tmp_Count.extend([0])
+            tmp_Max.extend([0])
+            tmp_Max_day.extend([" "])
+        else:
+            if(j%100==0):
+                print("Now:"+str(j)+"/"+str(len(data[i])))
+            tmp_Time.extend([str(data[i-1][j][0][:10])])
+            tmp_Var.extend([np.var(data[i][j])])
+            tmp_Std.extend([np.std(data[i][j])])
+            tmp_Aver.extend([np.sum(data[i][j])/(len(data[i][j])-1)])
+            tmp_Count.extend([len(data[i][j])-1])
+            tmp_Max.extend([max(data[i][j])])
+            for k in range(len(data[i][j])):
+                if(max(data[i][j])==data[i][j][k]):
+                    tmp_Max_day.extend([str(data[i-1][j][k])])
+                    break
+                
+    data_output=pd.DataFrame({'Day':tmp_Time,'Var':tmp_Var,'Std':tmp_Std,'Aver':tmp_Aver,'Max':tmp_Max,'Max_day':tmp_Max_day})
+    data_output.to_csv(my_path+"output/"+Path_dictionary[int((i-1)/2)]+".csv",index=False,sep=",")
+
 
 if __name__ == '__main__':
     my_path='D:/document/NCTU_sec1/Powermeter/' #input the path you put the data where named Powermeter in default.
@@ -431,7 +489,7 @@ if __name__ == '__main__':
     draw(my_path,filename)
     key=1
     while(key):
-        key=input("input 0 to exit\ninput 1 to show data status\ninput 2 to set range\nEnter:")
+        key=input("input 0 to exit\ninput 1 to show data status\ninput 2 to set range\ninput 3 to save all data\nEnter:")
         if(key==""):
             key=1
             continue
@@ -451,7 +509,7 @@ if __name__ == '__main__':
                 my_max(data,year,month,1,type_key)
         elif(key==2):
             type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
-            if(type_key>13):
+            if(type_key>13 ):
                 continue
             my_start_day=input_day(start_day,finish_day,0)
             if(my_start_day[0]==0):
@@ -460,5 +518,11 @@ if __name__ == '__main__':
             if(my_finish_day[0]==0):
                 continue
             custom_max(data,my_start_day,my_finish_day,type_key)
+        elif(key==3):
+            type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
+            if(type_key>13 ):
+                continue
+            all_save(data,my_path,type_key)
+            print("file saved.")
         input("Press Enter...")
         

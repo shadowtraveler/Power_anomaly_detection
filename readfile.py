@@ -45,6 +45,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import csv
 
 def start_day(data):
     long=len(data[0])-1
@@ -104,7 +105,7 @@ def draw(my_path='D:/document/NCTU_sec1/Powermeter/',filename='Current1/2018-09-
     except:
         raise ValueError("There is an error in draw function\nPlease check your filename or path.")
 
-def custom_max(data,start_day,end_day,type_key):
+def custom_max(my_path,data,start_day,end_day,type_key):
     def check_range(start_day,end_day):
         key=0
         if(start_day[0]!=end_day[0]):
@@ -132,7 +133,7 @@ def custom_max(data,start_day,end_day,type_key):
         if(end_day[0]==int(data[type_key_d][i][0][:4]) and end_day[1]==int(data[type_key_d][i][0][5:7]) and end_day[2]==int(data[type_key_d][i][0][8:10])):
             e_day=i+1
             break
-    my_draw(data,s_day,e_day,check_range(start_day,end_day),type_key)
+    my_draw(my_path,data,s_day,e_day,check_range(start_day,end_day),type_key)
     for i in range(s_day,e_day):
         if(len(data[type_key][i])!=1):
             num+=len(data[type_key][i])-1
@@ -274,7 +275,20 @@ def input_day(start_day,finish_day,key):
             else:
                 error_msg(error_key=1)
 
-def my_draw(data,start_day,end_day,key,type_key):
+def my_draw(my_path,data,start_day,end_day,key,type_key):
+    def cal(arr):
+        if(len(arr)==0):
+            return [0,0,0,0,0]
+        else:
+            Var=np.var(arr)
+            Stdev=np.std(arr)
+            Aver=(sum(arr)/len(arr))
+            Count=len(arr)
+            Max=max(arr)
+        return [Var,Stdev,Aver,Count,Max]
+    Path_dictionary=['Consumption-O','Current1','Current2','Power1','Power2','Volt1','Volt2',]
+    if(not os.path.isdir(my_path+"/output")):
+        os.mkdir(my_path+"/output")
     type_key_d=type_key-1
     sum_ans=0
     num=0
@@ -283,6 +297,7 @@ def my_draw(data,start_day,end_day,key,type_key):
     week_data=[]    
     week_data_time=[]
     day_data=[]     
+    day_data_time=[]
     hour_data=[]    
     min_data=[]     
     sec_data=[]     
@@ -334,7 +349,7 @@ def my_draw(data,start_day,end_day,key,type_key):
         if(len(data[type_key][i])!=1):
             sec_data.extend(data[type_key][i][1:])
             day_data.extend([sum(data[type_key][i])/(len(data[type_key][i])-1)])
-            
+            day_data_time.extend([data[type_key_d][i][0][:10]])
             for k in range(1,len(data[type_key][i])):
                 tmp=data[type_key_d][i][k].split()
                 if(hour_flag[0]==-1):
@@ -348,7 +363,7 @@ def my_draw(data,start_day,end_day,key,type_key):
                     if(num==0):
                         hour_data.extend([0])
                     else:
-                        hour_data.extend([sum_ans/num])
+                        hour_data.extend([(sum_ans/num)])
                     hour_flag[0]=int(tmp[1][:2])
                     hour_flag[1]=k
                     
@@ -370,6 +385,7 @@ def my_draw(data,start_day,end_day,key,type_key):
                     
                     
             #hour cal
+            sum_ans=0
             num=len(data[type_key][i])-hour_flag[1]
             for j in range(hour_flag[1],len(data[type_key][i])):
                 sum_ans+=data[type_key][i][j]
@@ -377,16 +393,21 @@ def my_draw(data,start_day,end_day,key,type_key):
                 hour_data.extend([0])
             else:
                 hour_data.extend([sum_ans/num])    
+            hour_flag[0]=-1
+            hour_flag[1]=0
             
             
             #min cal
+            sum_ans=0
             num=len(data[type_key][i])-min_flag[1]
             for j in range(min_flag[1],len(data[type_key][i])):
                 sum_ans+=data[type_key][i][j]
             if(num==0):
                 min_data.extend([0])
             else:
-                min_data.extend([sum_ans/num])    
+                min_data.extend([sum_ans/num])
+            min_flag[0]=-1
+            min_flag[1]=0
     #month cal
     for j in range(month_flag[1],end_day):
         sum_ans+=sum(data[type_key][j])
@@ -408,8 +429,8 @@ def my_draw(data,start_day,end_day,key,type_key):
     else:
         week_data.extend([sum_ans/num])
         week_data_time.extend([data[type_key_d][week_flag[1]][0][:10]])
-        
     #繪圖
+    csv_output=[["Interval","Var","Stdev","Average","Count","Max"]]
     fig = plt.figure(figsize=(36,12))
     ax1=fig.add_subplot(231)
     ax2=fig.add_subplot(232)
@@ -421,19 +442,48 @@ def my_draw(data,start_day,end_day,key,type_key):
     fig.suptitle('test', color='red', fontsize=20)
     ax1.plot(np.array(sec_data))
     ax1.set_title("sec")
+    tmp_output=["sec"]
+    tmp_output.extend(cal(np.array(sec_data)))
+    csv_output.append(tmp_output)
     ax2.plot(np.array(min_data))
     ax2.set_title("min")
+    tmp_output=["min"]
+    tmp_output.extend(cal(np.array(min_data)))
+    csv_output.append(tmp_output)
     ax3.plot(np.array(hour_data))
-    ax3.set_title("hour")    
-    ax4.plot(np.array(day_data))
+    ax3.set_title("hour")
+    tmp_output=["hour"]
+    tmp_output.extend(cal(np.array(hour_data)))
+    csv_output.append(tmp_output)
+    if(len(day_data_time)<10):    
+        ax4.plot(np.array(day_data_time),np.array(day_data))
+    else:
+        ax4.plot(np.array(day_data))
     ax4.set_title("day")
+    tmp_output=["day"]
+    tmp_output.extend(cal(np.array(day_data)))
+    csv_output.append(tmp_output)
     if(len(week_data_time)<10):
         ax5.plot(np.array(week_data_time),np.array(week_data))
     else:
         ax5.plot(np.array(week_data))
     ax5.set_title("week")
+    tmp_output=["week"]
+    tmp_output.extend(cal(np.array(week_data)))
+    csv_output.append(tmp_output)
     ax6.plot(np.array(month_data_time),np.array(month_data))
     ax6.set_title("month")
+    tmp_output=["month"]
+    tmp_output.extend(cal(np.array(month_data)))
+    csv_output.append(tmp_output)
+    save_text_path=my_path+"output/"+str(Path_dictionary[int(type_key_d/2)])+"_"+str(data[type_key_d][start_day][0][:10])+"_to_"+str(data[type_key_d][end_day-1][0][:10])+"_text.csv"
+    f=open(save_text_path,'w')
+    w=csv.writer(f)
+    for index in range(0,len(csv_output)):
+        w.writerow(csv_output[index])
+    f.close()
+    save_path=my_path+"output/"+str(Path_dictionary[int(type_key_d/2)])+"_"+str(data[type_key_d][start_day][0][:10])+"_to_"+str(data[type_key_d][end_day-1][0][:10])+".png"
+    plt.savefig(save_path)
     print("Close Picture to the next step")
     plt.show()
 
@@ -517,7 +567,7 @@ if __name__ == '__main__':
             my_finish_day=input_day(start_day,finish_day,1)
             if(my_finish_day[0]==0):
                 continue
-            custom_max(data,my_start_day,my_finish_day,type_key)
+            custom_max(my_path,data,my_start_day,my_finish_day,type_key)
         elif(key==3):
             type_key=2*int(input("Current1 information input 1\nCurrent2 information input 2\nPower1 information input 3\nPower2 information input 4\nVolt1 information input 5\nVolt2 information input 6\nChoose data:"))+1
             if(type_key>13 ):

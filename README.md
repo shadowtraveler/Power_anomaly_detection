@@ -16,6 +16,8 @@ python3 readfile.py
 
 Default wiil show a picture for test.Close it for next step.<br>
 
+
+Before you start this program, make sure to change your local path and filename in read_and_draw.py.<br>
 ```
 python3 read_and_draw.py
 ```

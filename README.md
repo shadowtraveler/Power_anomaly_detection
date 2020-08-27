@@ -17,8 +17,11 @@ python3 readfile.py
 Default wiil show a picture for test.Close it for next step.<br>
 
 
-Before you start this program, make sure to change your local path and filename in read_and_draw.py.<br>
+Before you start this program, make sure to change your local path and filename in read_and_draw.py and resample_date.py.<br>
 ```
 python3 read_and_draw.py
+python3 resample_date.py
 ```
 improved from readfile.py which use datetime package to upgrade readability.
+resample_date.py would do time alignment in file.
+
